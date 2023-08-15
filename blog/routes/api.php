@@ -29,3 +29,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('user/images/{id}', [UserImageController::class, 'destroy'])->name('user.images.destroy');
 });
 
+Route::group(['middleware' => ['auth', 'role:admin']], function () {
+    Route::get('/admin-dashboard', 'AdminController@index');
+});
+
+// Example route group with permission middleware
+Route::group(['middleware' => ['auth', 'permission:manage posts']], function () {
+    Route::get('/manage-posts', 'PostController@index');
+});
