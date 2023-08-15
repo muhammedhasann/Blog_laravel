@@ -9,7 +9,7 @@ use App\Models\Post;
 
 
 
-class UserPostController extends Controller
+class PostController extends Controller
 {
   public function index()
     {

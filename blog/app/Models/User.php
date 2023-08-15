@@ -1,52 +1,52 @@
 <?php
 
-namespace App\Models;
+use App\Http\Controllers\Controller;
+use App\Models\Post;
+use App\Models\Image; // Add this line to import the Image model
+use Illuminate\Http\Request;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
-
-
-class User extends Authenticatable
+class BlogPostController extends Controller
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
-    public function posts(): HasMany
+    public function index()
     {
-        return $this->hasMany(Post::class);
+        $posts = Post::with(['user', 'category', 'tags'])->get();
+        return response()->json(['posts' => $posts]);
+    }
+
+    public function show(Post $post)
+    {
+        return response()->json(['post' => $post->load(['user', 'category', 'tags', 'images'])]);
+    }
+
+    public function store(Request $request)
+    {
+        $user = auth()->user();
+        $post = $user->posts()->create($request->all());
+
+        if ($request->has('image_url')) {
+            $imageUrl = $request->input('image_url');
+            $post->images()->create(['path' => $imageUrl]);
+        }
+
+        return response()->json(['post' => $post], 201);
+    }
+
+    public function update(Request $request, Post $post)
+    {
+        $post->update($request->all());
+
+        if ($request->has('image_url')) {
+            $imageUrl = $request->input('image_url');
+            $post->images()->delete();
+            $post->images()->create(['path' => $imageUrl]);
+        }
+
+        return response()->json(['message' => 'Post updated successfully']);
+    }
+
+    public function destroy(Post $post)
+    {
+        $post->delete();
+        return response()->json(['message' => 'Post deleted successfully']);
     }
 }
